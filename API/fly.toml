@@ -1,0 +1,22 @@
+# fly.toml app configuration file generated for shamilreactapplication on 2023-10-20T23:22:12+04:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = "shamilreactapplication"
+primary_region = "cdg"
+
+[build]
+  image = "shamil9639/restore:latest"
+
+[env]
+  ASPNETCORE_URLS="http://+:8080"
+  StripeSettings__PublishableKey="pk_test_51O2qdqBlE1Ke48RM2BYrf2gx84qfzbwTtjqmz78sBztoU0nvjqvQMY6r6ALXjkLTbmlO1VUyLxsqtt4JvuoAMkks00H1RrOJEr"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ["app"]
