@@ -1,5 +1,4 @@
 import { Button, ButtonGroup, Typography } from "@mui/material";
-import { type } from "os";
 import { useAppDispatch, useAppSelector } from "../../app/store/configureStore";
 import { decrement, increment } from "./counterSlice";
 

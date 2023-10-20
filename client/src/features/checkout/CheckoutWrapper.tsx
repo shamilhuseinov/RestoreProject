@@ -5,7 +5,6 @@ import { useAppDispatch } from "../../app/store/configureStore";
 import { useEffect, useState } from "react";
 import agent from "../../app/api/agent";
 import { setBasket } from "../basket/basketSlice";
-import { error } from "console";
 import LoadingComponent from "../../app/layout/LoadingComponent";
 
 const stripePromise = loadStripe('pk_test_51O2qdqBlE1Ke48RM2BYrf2gx84qfzbwTtjqmz78sBztoU0nvjqvQMY6r6ALXjkLTbmlO1VUyLxsqtt4JvuoAMkks00H1RrOJEr')

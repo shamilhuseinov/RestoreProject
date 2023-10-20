@@ -1,6 +1,5 @@
 import { createAsyncThunk, createSlice, isAnyOf } from "@reduxjs/toolkit";
 import { Basket } from "../../app/models/basket";
-import { error } from "console";
 import agent from "../../app/api/agent";
 import { getCookie } from "../../app/util/util";
 

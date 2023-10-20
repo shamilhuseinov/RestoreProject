@@ -1,6 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { counterSlice } from "../../features/contact/counterSlice";
-import { type } from "os";
 import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
 import { basketSlice } from "../../features/basket/basketSlice";
 import { catalogSlice } from "../../features/catalog/catalogSlice";

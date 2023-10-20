@@ -8,7 +8,6 @@ import {yupResolver} from '@hookform/resolvers/yup';
 import { validationSchema } from "./checkoutValidation";
 import agent from "../../app/api/agent";
 import { useAppDispatch, useAppSelector } from "../../app/store/configureStore";
-import { clear } from "console";
 import { clearBasket } from "../basket/basketSlice";
 import { LoadingButton } from "@mui/lab";
 import { StripeElementType } from "@stripe/stripe-js";
