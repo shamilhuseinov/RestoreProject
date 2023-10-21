@@ -10,14 +10,23 @@ using System.Linq;
 using System.Threading.Tasks;
 using API.RequestHelpers;
 using API.Extensions;
+using Microsoft.AspNetCore.Authorization;
+using API.DTOs;
+using AutoMapper;
+using API.Services;
 
 namespace API.Controllers
 {
     public class ProductsController : BaseApiController
     {
         private readonly StoreContext _context;
-        public ProductsController(StoreContext context)
+        private readonly IMapper _mapper;
+
+        private readonly ImageService _imageService;
+        public ProductsController(StoreContext context, IMapper mapper, ImageService imageService)
         {
+            _imageService = imageService;
+            _mapper = mapper;
             _context=context;
         }
 
@@ -37,7 +46,7 @@ namespace API.Controllers
 
              return products;
         }
-        [HttpGet("{id}")]   
+        [HttpGet("{id}", Name = "GetProduct")]   
         public async Task<ActionResult<Product>> GetProduct(int id)
         {
             var product = await _context.Products.FindAsync(id);
@@ -56,102 +65,83 @@ namespace API.Controllers
 
             return Ok(new {brands, types});
         }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost]
+        public async Task<ActionResult<Product>> CreateProduct([FromForm]CreateProductDto productDto)
+        {
+            var product = _mapper.Map<Product>(productDto);
+
+            if (productDto.File != null)
+            {
+                var imageResult = await _imageService.AddImageAsync(productDto.File);
+
+                if (imageResult.Error != null)
+                 return BadRequest(new ProblemDetails{Title = imageResult.Error.Message});
+
+                product.PictureUrl = imageResult.SecureUrl.ToString();
+                product.PublicId = imageResult.PublicId;
+            }
+            
+            _context.Products.Add(product);
+
+            var result = await _context.SaveChangesAsync() > 0;
+
+            if (result) return CreatedAtRoute("GetProduct", new {Id = product.Id}, product);
+
+            return BadRequest(new ProblemDetails {Title = "Problem creating new product"});
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut]
+        public async Task<ActionResult<Product>> UpdateProduct([FromForm]UpdateProductDto productDto)
+        {
+            var product = await _context.Products.FindAsync(productDto.Id);
+
+            if (product == null) return NotFound();
+
+            _mapper.Map(productDto, product);
+
+            if (productDto.File != null)
+            {
+                var imageResult = await _imageService.AddImageAsync(productDto.File);
+
+                if (imageResult.Error != null)
+                 return BadRequest(new ProblemDetails{Title = imageResult.Error.Message});
+
+                if (!string.IsNullOrEmpty(product.PublicId))
+                 await _imageService.DeleteImageAsync(product.PublicId);
+
+                product.PictureUrl = imageResult.SecureUrl.ToString();
+                product.PublicId = imageResult.PublicId;
+            }
+
+            var result = await _context.SaveChangesAsync() > 0;
+
+            if (result) return Ok(product);
+
+            return BadRequest(new ProblemDetails{Title="Problem updating product"});
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("{id}")]
+        public async Task<ActionResult> DeleteProduct(int id)
+        {
+            var product = await _context.Products.FindAsync(id);
+
+            if (product == null) return NotFound();
+
+            if (!string.IsNullOrEmpty(product.PublicId))
+                 await _imageService.DeleteImageAsync(product.PublicId);
+
+            _context.Products.Remove(product);
+
+            var result = await _context.SaveChangesAsync() > 0;
+
+            if (result) return Ok();
+
+            return BadRequest(new ProblemDetails{Title="Problem deleting product"});
+        }
+
     }
 }
-
-
-// using System;
-// using System.Text.Json;
-// using System.Collections.Generic;
-// using System.Linq;
-// using System.Threading.Tasks;
-// using Microsoft.AspNetCore.Mvc;
-// using Microsoft.EntityFrameworkCore;
-// using API.RequestHelpers;
-// using API.Data;
-// using API.Entities;
-// using API.Extensions;
-
-// namespace API.Controllers
-// {
-//     public class ProductsController : BaseApiController
-//     {
-//         private readonly StoreContext _context;
-
-//         public ProductsController(StoreContext context)
-//         {
-//             _context = context;
-//         }
-
-//         [HttpGet]
-//         public async Task<ActionResult<PagedList<Product>>> GetProducts([FromQuery]ProductParams productParams)
-//         {
-//             var query = _context.Products.AsQueryable();
-
-//             // Filtering by brands (case-sensitive)
-//             if (!string.IsNullOrEmpty(productParams.Brands))
-//             {
-//                 var selectedBrands = productParams.Brands.Split(',').ToList();
-//                 query = query.Where(p => selectedBrands.Contains(p.Brand));
-//             }
-
-//             // Filtering by types (case-sensitive)
-//             if (!string.IsNullOrEmpty(productParams.Types))
-//             {
-//                 var selectedTypes = productParams.Types.Split(',').ToList();
-//                 query = query.Where(p => selectedTypes.Contains(p.Type));
-//             }
-
-//             // Sorting
-//             if (!string.IsNullOrEmpty(productParams.OrderBy))
-//             {
-//                 switch (productParams.OrderBy)
-//                 {
-//                     case "name":
-//                         query = query.OrderBy(p => p.Name);
-//                         break;
-//                     case "price":
-//                         query = query.OrderBy(p => p.Price);
-//                         break;
-//                     // Add more sorting options as needed
-//                 }
-//             }
-
-//             // Searching (case-sensitive)
-//             if (!string.IsNullOrEmpty(productParams.SearchTerm))
-//             {
-//                 // SQL Server-specific: Use COLLATE to specify a case-sensitive collation
-//                 query = query.Where(p => 
-//                     EF.Functions.Collate(p.Name, "Latin1_General_BIN").Contains(productParams.SearchTerm) || 
-//                     EF.Functions.Collate(p.Description, "Latin1_General_BIN").Contains(productParams.SearchTerm));
-//             }
-
-//             var products = await PagedList<Product>.ToPagedList(query, productParams.PageNumber, productParams.PageSize);
-
-//             Response.AddPaginationHeader(products.MetaData);
-
-//             return products;
-//         }
-
-//         [HttpGet("{id}")]
-
-//         public async Task<ActionResult<Product>> GetProduct(int id)
-//         {
-//             var product = await _context.Products.FindAsync(id);
-
-//             if (product == null) return NotFound();
-
-//             return product;
-//         }
-
-//         [HttpGet("filters")]
-
-//         public async Task<IActionResult> GetFilters()
-//         {
-//             var brands = await _context.Products.Select(p=>p.Brand).Distinct().ToListAsync();
-//             var types = await _context.Products.Select(p=>p.Type).Distinct().ToListAsync();
-
-//             return Ok(new {brands, types});
-//         }
-//     }
-// }
