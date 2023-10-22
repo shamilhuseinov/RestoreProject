@@ -45,7 +45,7 @@ export default function Header({darkMode, handleThemeChange}: Props){
                         sx={navStyles}
                     
                     >
-                        RE-STORE
+                        FASHION STORE
                     </Typography>
                     <Switch checked={darkMode} onChange={handleThemeChange}/>
                 </Box>

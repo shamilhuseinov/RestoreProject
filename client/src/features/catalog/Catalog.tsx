@@ -38,7 +38,7 @@ export default function Catalog() {
 
         </Paper>
         <Paper sx={{mb: 2, p: 2}}>
-          <CheckboxButtons
+          <CheckboxButtons 
             items={brands}
             checked={productParams.brands}
             onChange={(items: string[]) => dispatch(setProductParams({brands:items}))}
